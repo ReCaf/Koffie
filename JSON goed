@@ -1,0 +1,42 @@
+train.df <- data.frame(
+  
+  fullVisitorId = train$fullVisitorId, # ID
+  channelGrouping = train$channelGrouping,
+  date = train$date,
+  sessionID = train$sessionId,
+  socialEngagementType = train$socialEngagementType,
+  visitId = train$visitId,
+  visitNumber = train$visitNumber,
+  visitStartTime = train$visitStartTime,
+  
+  json2df(train$device), # device (JSON)
+  json2df(train$geoNetwork), #geoNetwork (JSON)
+  json2df(train$totals), # totals (JSON)
+  json2df(train$trafficSource) # trafficSource (JSON)
+  
+)
+
+# Do the same for the test set.
+
+test.df <- data.frame(
+  
+  fullVisitorId = test$fullVisitorId, # ID
+  channelGrouping = test$channelGrouping,
+  date = test$date,
+  sessionID = test$sessionId,
+  socialEngagementType = test$socialEngagementType,
+  visitId = test$visitId,
+  visitNumber = test$visitNumber,
+  visitStartTime = test$visitStartTime,
+  
+  json2df(test$device), # device (JSON)
+  json2df(test$geoNetwork), #geoNetwork (JSON)
+  json2df(test$totals), # totals (JSON)
+  json2df(test$trafficSource) # trafficSource (JSON)
+  
+)
+
+# Save them as new csv files:
+
+write.csv(train.df, "traindf.csv", row.names = F)
+write.csv(test.df, "testdf.csv", row.names = F)
