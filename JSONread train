@@ -1,0 +1,94 @@
+install.packages("rjson")
+library("rjson")
+library("dplyr")
+library("tidyjson")
+library("jsonlite")
+
+train = read.csv(file.choose(), header = T, sep = ",")
+subset = subset[1:100,]
+
+jsonCol<-subset[,c(3,5,8,9)]
+regCol<-subset[,-c(3,5,8,9)]
+out<-flatten(jsonCol)
+
+
+column1<-as.character(subset[,3])
+column2<-as.character(subset[,5])
+column3<-as.character(subset[,8])
+column4<-as.character(subset[,9])
+
+
+column1<-column1 %>%             
+  as.tbl_json %>%  
+
+  spread_values(   
+    browser = jstring("browser"),
+    browserVersion = jstring("browserVersion"),    
+    browserSize =  jstring("browserSize"),
+    operatingSystem = jstring("operatingSystem"),
+   opSysVer = jstring("operatingSystemVersion"),
+   isMobile = jlogical("isMobile"),
+    mobileBrand = jstring("mobileDeviceBranding"),
+    mobileModel = jstring("mobileDeviceModel"),
+    mobileInput = jstring("mobileInputSelector"),
+    mobileDevice = jstring("mobileDeviceInfo"),
+    mobileDeviceMarket = jstring("mobileDeviceMarketingName"),
+    flashVersion = jstring("flashVersion"),
+    language = jstring("language"),
+    colors = jstring("screenColors"),
+    res = jstring("screenResolution"),
+    category = jstring("deviceCategory")
+
+
+ )%>%
+  select(-document.id)
+
+column2<-column2 %>%             
+  as.tbl_json %>%  
+  spread_values( 
+    continent = jstring("continent"),
+    subContinent = jstring("subContinent"),
+    country = jstring("country"),
+    region = jstring("region"),
+    metro = jstring("metro"),
+    city = jstring("city"),
+    cityID = jstring("cityID"),
+    networkDomain = jstring("networkDomain"),
+    latitude = jstring("latitude"),
+    longitude = jstring("longitude"),
+    networkLocation = jstring("networkLocation")
+
+  )%>%
+  select(-document.id)
+
+
+column3<-column3 %>%             
+  as.tbl_json %>%  
+  spread_values( 
+    visits = jnumber("visits"),
+    hits = jnumber("hits"),
+    pageviews = jnumber("pageviews"),
+    bounces = jnumber("bounces"),
+    newVisits = jnumber("newVisits")
+  )%>%
+  select(-document.id)
+
+
+
+column4<-column4 %>%             
+  as.tbl_json %>%  
+  spread_values( 
+    campaign = jstring("campaign"),
+    source = jstring("source"),
+    medium = jstring("medium"),
+    keyword = jstring("keyword"),
+    isTrueDirect = jstring("isTrueDirect"),
+    referralPath = jstring("referralPath"),
+    adwordsClickInfo = jstring("criteriaParameters")
+    
+ )%>%
+  select(-document.id)
+
+
+corrected_json<-data.frame(column1,column2,column3, column4)
+subset1<-data.frame(regCol, corrected_json)
