@@ -4,3 +4,19 @@ chille site die alle stappen doorloopt in R https://towardsdatascience.com/predi
 
 # remove columns with only NA
 train.new = train[,-c(5,10,11,13,15:23,31,33,34,35,49,50)] 
+
+------
+
+#Date split / Time split
+train <- transform(train, Year = substr(date, 1, 4), Month = substr(date, 5, 6), Day = substr(date, 7,8), Time = substr(anytime(visitStartTime),12,19))
+
+#Daypart: Night, Morning, Afternoon, Evening
+levels <- c(00,6,12,18,Inf)
+labels <- c("Night", "Morning", "Afternoon", "Evening")
+train <- mutate(train, Day_Part = cut(as.numeric(substr(Time,1,2)), levels, labels = labels))
+train$Day_Part[is.na(train$Day_Part)] <- "Night"
+
+#Weekday
+train$date <- paste(train$Year, train$Month, train$Day, sep = "-")
+train$weekday <- factor(weekdays(as.Date(train$date), abbreviate = F))
+
