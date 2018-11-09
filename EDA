@@ -1,2 +1,27 @@
-# Split date in Year, Month and Day column
-train <- transform(train, Year = substr(date, 1, 4), Month = substr(date, 5, 6), Day = substr(date, 7,8))
+#Channel
+table(train.new$channelGrouping)
+plot(train.new$channelGrouping)
+
+#Timing
+par(mfrow=c(1,4))
+plot(train.new$Year)
+plot(train.new$Month)
+plot(train.new$Day)
+plot(train.new$weekday)
+plot(train.new$Day_Part)
+par(las = 0)
+
+#20/80 Rule 
+agg_year <- aggregate(transactionRevenue ~ Year, data = train.new, sum)
+agg_month <- aggregate(transactionRevenue ~ Month, data = train.new, sum)
+agg_day <- aggregate(transactionRevenue ~ Day, data = train.new, sum)
+agg_weekday <- aggregate(transactionRevenue ~ weekday, data = train.new, sum)
+agg_daypart <- aggregate(transactionRevenue ~ Day_Part, data = train.new, sum)
+
+par(mfrow=c(1,4))
+plot(agg_year)
+plot(agg_month)
+plot(agg_day)
+plot(agg_weekday)
+plot(agg_daypart)
+par(las = 0)
