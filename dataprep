@@ -37,3 +37,17 @@ train.new$Day_Part[is.na(train.new$Day_Part)] <- "Night"
 train.new$oldDate <- paste(train.new$Year, train.new$Month, train.new$Day, sep = "")
 train.new$date <- paste(train.new$Year, train.new$Month, train.new$Day, sep = "-")
 train.new$weekday <- factor(weekdays(as.Date(train.new$date), abbreviate = F))
+
+
+#Thin out features browser, operatingSystem,country
+aggregate(train.new$visitNumber~browser,data=train.new, sum)
+c.browser=c('Chrome','Edge','Firefox','Internet Explorer','Opera','Opera Mini','Safari','Safari (in-app)')
+trial=data.frame(ifelse(train.new$browser %in% c.browser,as.character(train.new$browser[(train.new$browser %in% c.browser)]),"Other"))
+train.new$browser=as.factor(trial)
+barplot(table(trial), main=colnames(train.new)[8])
+
+aggregate(train.new$visitNumber~operatingSystem,data=train.new, sum)
+c.operatingSystem=c('Windows','Android','Macintosh','iOS','Linux','Chrome OS','Windows Phone')
+trial=data.frame(ifelse(train.new$operatingSystem %in% c.operatingSystem,as.character(train.new$operatingSystem[(train.new$operatingSystem %in% c.operatingSystem)]),"Other"))
+train.new$operatingSystem=as.factor(trial)
+barplot(table(trial), main=colnames(train.new)[8])
