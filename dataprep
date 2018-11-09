@@ -17,7 +17,8 @@ train.new$campaign = as.factor(mapvalues(train.new$campaign, from=c("(not set)")
 #transform medium (none) and (not set) to NA
 train.new$medium = as.factor(mapvalues(train.new$medium, from=c("(not set)"), to=c(NA)))
 train.new$medium = as.factor(mapvalues(train.new$medium, from=c("(none)"), to=c(NA)))
-
+#transform browser (not set ) to NA
+train.new$browser = as.factor(mapvalues(train.new$browser, from=c("(not set)"), to=c(NA)))
 
 ------
 
