@@ -1,91 +1,58 @@
-library(tree)
 library(ISLR)
-attach(Carseats)
-High = ifelse(Sales<=8,"No","Yes")
-Carseats=data.frame(Carseats,High)
-#tree
-tree.carseats=tree(High~.-Sales,Carseats)
-summary(tree.carseats)
-x11()
-plot(tree.carseats)
-text(tree.carseats,pretty = 0)
-#predict
-set.seed(2)
-train=sample(1:nrow(Carseats),200)
-carseats.test=Carseats[-train,]
-High.test=High[-train]
-tree.carseats=tree(High~.-Sales,Carseats,subset = train)
-tree.pred=predict(tree.carseats,carseats.test,type="class")
-table(tree.pred,High.test)
-
-set.seed(3)
-cv.carseats=cv.tree(tree.carseats,FUN=prune.misclass)
-names(cv.carseats)
-cv.carseats
-par(mfrow=c(1,2))
-x11()
-plot(cv.carseats$size,cv.carseats$dev,type="b")
-x11()
-plot(cv.carseats$k,cv.carseats$dev,type="b")
-#prune the tree
-prune.carseats=prune.misclass(tree.carseats,best=9)
-x11()
-plot(prune.carseats)
-text(prune.carseats,pretty=0)
-tree.pred=predict (prune.carseats, carseats.test,type="class")
-table(tree.pred,High.test)
-#fitting a regresion tree on bosto data
-library(MASS)
+library(e1071)
+library(ROCR)
+attach(OJ)
+#create a 800 training observations and a remaining test set
+dim(OJ)
 set.seed(1)
-train=sample(1:nrow(Boston),nrow(Boston)/2)
-tree.boston=tree(medv~.,Boston,subset = train)
-summary(tree.boston)
-x11()
-plot(tree.boston)
-text(tree.boston,pretty=0)
-#prunning
-cv.boston=cv.tree(tree.boston)
-x11()
-plot(cv.boston$size,cv.boston$dev,type = 'b')
-prune.boston=prune.tree(tree.boston,best = 5)
-x11()
-plot(prune.boston)
-text(prune.boston,pretty=0)
-yhat=predict(tree.boston ,newdata =Boston[-train ,])
-boston.test=Boston[-train,"medv"]
-plot(yhat,boston.test)
-abline(0,1)
-mean((yhat-boston.test)^2)
-
-#baggin and random forest
-library(randomForest)
-#bagging m=p
-set.seed(1)
-bag.boston=randomForest(medv~.,data = Boston,subset=train,
-                        mtry=13,importance=T)
-bag.boston
-yhat.bag=predict(bag.boston,newdata = Boston[-train,])
-plot(yhat.bag,boston.test)
-abline(0,1)
-mean((yhat.bag-boston.test)^2)
-#random forest 
-set.seed(1)
-rf.boston=randomForest(medv~.,data = Boston,subset=train,
-                       mtry=6,importance=T)
-yhat.rf=predict(rf.boston,newdata = Boston[-train,])
-mean((yhat.rf-boston.test)^2)
-importance(rf.boston)
-varImpPlot(rf.boston)
-
-#boosting
-library(gbm)
-set.seed(1)
-boost.boston=gbm(medv~.,data=Boston[train,],distribution=
-                   "gaussian",n.trees=5000,interaction.depth = 4)
-summary(boost.boston)
-par(mfrow=c(1,2))
-plot(boost.boston,i="rm")
-plot(boost.boston,i="lstat")
-yhat.boost=predict(boost.boston,newdata=Boston[-train,],
-                   n.trees = 5000)
-mean((yhat.boost-boston.test)^2)
+train=sample(seq_len(nrow(OJ)),size = 800)
+train.oj = OJ[train,]
+test.oj = OJ[-train,]
+#b support vector classifier cost=0.01 purchase is response var 
+svm.fit=svm(Purchase~., data = OJ[train,], kernel="linear",cost=0.01 )
+summary(svm.fit)
+plot(svm.fit,OJ)
+#training and test errors
+train.predict=predict(svm.fit,train.oj)
+train.table=table(predict=train.predict,trith=train.oj$Purchase)
+trainingerror1 = (train.table[2,1]+train.table[1,2])/(train.table[1,1]+train.table[2,2])
+test.predict=predict(svm.fit,test.oj)
+test.table=table(predict=test.predict,trith=test.oj$Purchase)
+testerror1= (test.table[2,1]+test.table[1,2])/(test.table[1,1]+test.table[2,2])
+#use tune on a range from 0.01 to 10
+tune.out=tune(svm,Purchase~., data=train.oj, kernel= "linear",ranges=list(cost=c(0.01,0.1,0.5,1,2,5,10)))
+summary(tune.out)
+bestmod=tune.out$best.model
+#training error and test error
+train.predict=predict(bestmod,train.oj)
+train.table=table(predict=train.predict,trith=train.oj$Purchase)
+trainingerror2 = (train.table[2,1]+train.table[1,2])/(train.table[1,1]+train.table[2,2])
+test.predict=predict(bestmod,test.oj)
+test.table=table(predict=test.predict,trith=test.oj$Purchase)
+testerror2= (test.table[2,1]+test.table[1,2])/(test.table[1,1]+test.table[2,2])
+#tune with radial kerne;
+tune.out2=tune(svm,Purchase~., data=train.oj, kernel= "radial",ranges=list(cost=c(0.01,0.1,0.5,1,2,5,10)))
+summary(tune.out2)
+bestmod2=tune.out2$best.model
+train.predict=predict(bestmod2,train.oj)
+train.table=table(predict=train.predict,trith=train.oj$Purchase)
+trainingerror3 = (train.table[2,1]+train.table[1,2])/(train.table[1,1]+train.table[2,2])
+test.predict=predict(bestmod2,test.oj)
+test.table=table(predict=test.predict,trith=test.oj$Purchase)
+testerror3= (test.table[2,1]+test.table[1,2])/(test.table[1,1]+test.table[2,2])
+#tune with polynomial kernel
+tune.out3=tune(svm,Purchase~., data=train.oj, kernel= "polynomial", degree=2 ,ranges=list(cost=c(0.01,0.1,0.5,1,2,5,10)))
+summary(tune.out3)
+bestmod3=tune.out2$best.model
+train.predict=predict(bestmod2,train.oj)
+train.table=table(predict=train.predict,trith=train.oj$Purchase)
+trainingerror4 = (train.table[2,1]+train.table[1,2])/(train.table[1,1]+train.table[2,2])
+test.predict=predict(bestmod2,test.oj)
+test.table=table(predict=test.predict,trith=test.oj$Purchase)
+testerror4= (test.table[2,1]+test.table[1,2])/(test.table[1,1]+test.table[2,2])
+#best
+rocplot =function (pred , truth , ...){
+  predob = prediction (pred , truth )
+  perf = performance (predob , "tpr ", "fpr ")
+  plot(perf ,...)}
+rocplot(train.predict,OJ[train,"Purchase"])
