@@ -1,0 +1,76 @@
+train <- data.frame(read.csv(file.choose(),header=TRUE))
+subset <- data.frame(train[1:100,])
+
+#01 DATA PREPARATION
+
+#data transformation
+
+# remove columns with only NA
+train.new = train[,-c(5,10,11,13,15:23,29,31:36,39,40,45,47,49:55)] 
+library(plyr)
+library(anytime)
+library(randomForest)
+
+#remove rows
+df<-na.omit(df$pageviews)
+df<-na.omit(df$browser)
+
+#transform region not avaible in demo data set and not set in to NA
+train.new$region = as.factor(mapvalues(train.new$region, from=c("not available in demo dataset"), to=c(NA)))
+train.new$region = as.factor(mapvalues(train.new$region, from=c("(not set)"), to=c(NA)))
+#transform city not avaible in demo data set and not set in to NA
+train.new$city = as.factor(mapvalues(train.new$city, from=c("not available in demo dataset"), to=c(NA)))
+train.new$city = as.factor(mapvalues(train.new$city, from=c("(not set)"), to=c(NA)))
+#transform continent (not set) to NA
+train.new$continent = as.factor(mapvalues(train.new$continent, from=c("(not set)"), to=c(NA)))
+#transform campaing (not set) to NA
+train.new$campaign = as.factor(mapvalues(train.new$campaign, from=c("(not set)"), to=c(NA)))
+#transform medium (none) and (not set) to NA
+train.new$medium = as.factor(mapvalues(train.new$medium, from=c("(not set)"), to=c(NA)))
+train.new$medium = as.factor(mapvalues(train.new$medium, from=c("(none)"), to=c(NA)))
+#transform browser (not set ) to NA
+train.new$browser = as.factor(mapvalues(train.new$browser, from=c("(not set)"), to=c(NA)))
+
+#Thin out features browser, operatingSystem,country
+aggregate(train.new$visitNumber~browser,data=train.new, sum)
+c.browser=c('Chrome','Edge','Firefox','Internet Explorer','Opera','Opera Mini','Safari','Safari (in-app)')
+trial=data.frame(ifelse(train.new$browser %in% c.browser,as.character(train.new$browser[(train.new$browser %in% c.browser)]),"Other"))
+train.new$browser=as.factor(trial)
+barplot(table(trial), main=colnames(train.new)[8])
+
+aggregate(train.new$visitNumber~operatingSystem,data=train.new, sum)
+c.operatingSystem=c('Windows','Android','Macintosh','iOS','Linux','Chrome OS','Windows Phone')
+trial=data.frame(ifelse(train.new$operatingSystem %in% c.operatingSystem,as.character(train.new$operatingSystem[(train.new$operatingSystem %in% c.operatingSystem)]),"Other"))
+train.new$operatingSystem=as.factor(trial)
+barplot(table(trial), main=colnames(train.new)[8])
+
+#Date split / Time split
+train.new <- transform(train.new, Year = substr(date, 1, 4), Month = substr(date, 5, 6), Day = substr(date, 7,8), Time = substr(anytime(visitStartTime),12,19))
+
+#Daypart: Night, Morning, Afternoon, Evening
+levels <- c(00,6,12,18,Inf)
+labels <- c("Night", "Morning", "Afternoon", "Evening")
+train.new <- mutate(train.new, Day_Part = cut(as.numeric(substr(Time,1,2)), levels, labels = labels))
+train.new$Day_Part[is.na(train.new$Day_Part)] <- "Night"
+
+#Weekday
+train.new$oldDate <- paste(train.new$Year, train.new$Month, train.new$Day, sep = "")
+train.new$date <- paste(train.new$Year, train.new$Month, train.new$Day, sep = "-")
+train.new$weekday <- factor(weekdays(as.Date(train.new$date), abbreviate = F))
+
+#######
+
+RANDOMFOREST
+
+library(randomForest)
+set.seed(123)
+
+df <- train.new 
+df$transactionRevenue[is.na(df$transactionRevenue)] <- 0
+df$buy[df$transactionRevenue > 0] <- 1
+df$buy[df$transactionRevenue <= 0] <- 0
+
+tr <- subset(df,oldDate<20161201)
+te <- subset(df,(oldDate<20170201)&(oldDate>20161130))
+
+rf <- randomForest(transactionRevenue ~ Year + Month + weekday + Day_Part + visitNumber + channelGrouping + operatingSystem + continent + subContinent + hits + pageviews + medium, data = tr, importance = TRUE, ntree=10, na.action=na.roughfix)
