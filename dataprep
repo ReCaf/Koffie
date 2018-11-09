@@ -24,17 +24,16 @@ train.new$medium = as.factor(mapvalues(train.new$medium, from=c("(none)"), to=c(
 train.new$browser = as.factor(mapvalues(train.new$browser, from=c("(not set)"), to=c(NA)))
 
 ------
-
 #Date split / Time split
-train <- transform(train, Year = substr(date, 1, 4), Month = substr(date, 5, 6), Day = substr(date, 7,8), Time = substr(anytime(visitStartTime),12,19))
+train.new <- transform(train.new, Year = substr(date, 1, 4), Month = substr(date, 5, 6), Day = substr(date, 7,8), Time = substr(anytime(visitStartTime),12,19))
 
 #Daypart: Night, Morning, Afternoon, Evening
 levels <- c(00,6,12,18,Inf)
 labels <- c("Night", "Morning", "Afternoon", "Evening")
-train <- mutate(train, Day_Part = cut(as.numeric(substr(Time,1,2)), levels, labels = labels))
-train$Day_Part[is.na(train$Day_Part)] <- "Night"
+train.new <- mutate(train.new, Day_Part = cut(as.numeric(substr(Time,1,2)), levels, labels = labels))
+train.new$Day_Part[is.na(train.new$Day_Part)] <- "Night"
 
 #Weekday
-train$date <- paste(train$Year, train$Month, train$Day, sep = "-")
-train$weekday <- factor(weekdays(as.Date(train$date), abbreviate = F))
-
+train.new$oldDate <- paste(train.new$Year, train.new$Month, train.new$Day, sep = "")
+train.new$date <- paste(train.new$Year, train.new$Month, train.new$Day, sep = "-")
+train.new$weekday <- factor(weekdays(as.Date(train.new$date), abbreviate = F))
